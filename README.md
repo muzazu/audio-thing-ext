@@ -1,6 +1,6 @@
 # ![Audio Thing](https://raw.githubusercontent.com/muzazu/audio-thing-ext/main/public/icon/32.png) Audio Thing
 
-A small browser extension to manage and boost audio levels in the browser. Currently targeted for Chrome during development.
+A small browser extension to manage and boost audio levels in the browser.
 
 **Quick summary:** lightweight UI built with React and WXT, focused on letting users increase or normalize audio output per tab.
 
@@ -17,6 +17,7 @@ A small browser extension to manage and boost audio levels in the browser. Curre
 - Node.js (recommended >= 18)
 - vp (Vite Plus) — we use `vp` for hooks: https://viteplus.dev/guide/
 - bun: https://bun.com/
+- oxc plugins: https://oxc.rs/docs/guide/introduction.html
 
 ## Tech stack
 
