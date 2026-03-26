@@ -3,8 +3,6 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import type { GetChannelUrlResponse } from '@/constants/actions';
-
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -16,13 +14,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { sendMessage, queryTab } from '@/lib/utils';
-import {
-  extractChannelUrl,
-  extractDomain,
-  isSpecialDomain,
-} from '@/utils/domain';
-import { volumeEntries, type VolumeEntry } from '@/utils/storage';
+import { useActiveTab } from '@/hooks/useActiveTab';
+import { useSavedIndicator } from '@/hooks/useSavedIndicator';
+import { sendMessage } from '@/lib/utils';
+import { isSpecialDomain } from '@/utils/domain';
+import { upsertVolumeEntry } from '@/utils/volume-entries';
 
 const formSchema = z.object({
   domain: z.string().min(1, 'Domain is required'),
@@ -42,87 +38,39 @@ export function VolumeForm() {
     },
   });
 
-  const [saved, setSaved] = React.useState(false);
-  const activeTabIdRef = React.useRef<number | undefined>(undefined);
+  const { saved, markSaved } = useSavedIndicator();
+  const activeTab = useActiveTab();
 
   const watchedDomain = form.watch('domain');
   const showChannelUrl = isSpecialDomain(watchedDomain);
 
-  // On mount: auto-detect active tab domain + channel
+  // Sync active tab info into form fields when it resolves
   React.useEffect(() => {
-    browser.tabs
-      .query({ active: true, currentWindow: true })
-      .then(async ([tab]) => {
-        if (!tab?.url) return;
-        activeTabIdRef.current = tab.id;
-        const domain = extractDomain(tab.url);
-        let channelUrl = extractChannelUrl(tab.url);
-
-        form.setValue('domain', domain);
-
-        // Fall back to DOM extraction when the URL doesn't carry the channel
-        // (e.g. YouTube watch pages, Twitch pages visited via SPA navigation)
-        if (!channelUrl && tab.id !== undefined && isSpecialDomain(domain)) {
-          const res = await queryTab<GetChannelUrlResponse>(tab.id, {
-            type: 'GET_CHANNEL_URL',
-          });
-
-          channelUrl = res?.channelUrl;
-        }
-
-        if (channelUrl) {
-          form.setValue('channelUrl', channelUrl);
-        }
-
-        // Pre-fill volume from existing saved entry
-        const entries = await volumeEntries.getValue();
-        const existing = entries.find(
-          (e) =>
-            e.domain === domain && (e.channelUrl ?? '') === (channelUrl ?? ''),
-        );
-        if (existing) {
-          form.setValue('volume', existing.volume);
-        }
-      });
-  }, [form]);
+    if (!activeTab.domain) return;
+    form.setValue('domain', activeTab.domain);
+    if (activeTab.channelUrl) {
+      form.setValue('channelUrl', activeTab.channelUrl);
+    }
+    if (activeTab.existingEntry) {
+      form.setValue('volume', activeTab.existingEntry.volume);
+    }
+  }, [form, activeTab]);
 
   async function onSubmit(values: FormValues) {
-    const entries = await volumeEntries.getValue();
     const channelUrl = showChannelUrl
       ? values.channelUrl || undefined
       : undefined;
 
-    const newEntry: VolumeEntry = {
-      id: crypto.randomUUID(),
-      domain: values.domain,
-      volume: values.volume,
-      channelUrl,
-    };
+    await upsertVolumeEntry(values.domain, values.volume, channelUrl);
 
-    const idx = entries.findIndex(
-      (e) =>
-        e.domain === values.domain &&
-        (e.channelUrl ?? '') === (channelUrl ?? ''),
-    );
-
-    const updated =
-      idx >= 0
-        ? entries.map((e, i) =>
-            i === idx ? { ...e, volume: values.volume, channelUrl } : e,
-          )
-        : [...entries, newEntry];
-
-    await volumeEntries.setValue(updated);
-
-    if (activeTabIdRef.current !== undefined) {
-      await sendMessage(activeTabIdRef.current, {
+    if (activeTab.tabId !== undefined) {
+      await sendMessage(activeTab.tabId, {
         type: 'SET_VOLUME',
         gain: values.volume / 100,
       });
     }
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    markSaved();
   }
 
   const volumeValue = form.watch('volume');
@@ -139,7 +87,11 @@ export function VolumeForm() {
             <FormItem>
               <FormLabel>Domain</FormLabel>
               <FormControl>
-                <Input placeholder='e.g. www.youtube.com' {...field} />
+                <Input
+                  data-testid='domain-input'
+                  placeholder='e.g. www.youtube.com'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -154,7 +106,11 @@ export function VolumeForm() {
               <FormItem>
                 <FormLabel>Channel URL</FormLabel>
                 <FormControl>
-                  <Input placeholder='e.g. /@mkbhd' {...field} />
+                  <Input
+                    data-testid='channel-url-input'
+                    placeholder='e.g. /@mkbhd'
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -179,10 +135,11 @@ export function VolumeForm() {
                   max={300}
                   step={1}
                   value={[field.value]}
+                  data-testid='volume-slider'
                   onValueChange={([v]) => {
                     field.onChange(v);
-                    if (activeTabIdRef.current !== undefined) {
-                      sendMessage(activeTabIdRef.current, {
+                    if (activeTab.tabId !== undefined) {
+                      sendMessage(activeTab.tabId, {
                         type: 'SET_VOLUME',
                         gain: v / 100,
                       });
@@ -195,7 +152,12 @@ export function VolumeForm() {
           )}
         />
 
-        <Button type='submit' className='w-full rounded-full mt-2' size={'lg'}>
+        <Button
+          type='submit'
+          className='w-full rounded-full mt-2'
+          size={'lg'}
+          data-testid='save-button'
+        >
           {saved ? 'Saved!' : 'Save'}
         </Button>
       </form>

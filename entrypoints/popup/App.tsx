@@ -28,15 +28,27 @@ function App() {
           <Settings />
         </TabsContent>
         <TabsList className='w-full py-2 h-auto! shrink-0'>
-          <TabsTrigger value='volume' className='py-4 rounded-full'>
+          <TabsTrigger
+            value='volume'
+            className='py-4 rounded-full'
+            data-testid='tab-volume'
+          >
             <AudioLinesIcon className='size-4 mr-1' />
             Volume
           </TabsTrigger>
-          <TabsTrigger value='saved' className='py-4 rounded-full'>
+          <TabsTrigger
+            value='saved'
+            className='py-4 rounded-full'
+            data-testid='tab-saved'
+          >
             <BookmarkIcon className='size-4 mr-1' />
             Saved
           </TabsTrigger>
-          <TabsTrigger value='setting' className='py-4 rounded-full'>
+          <TabsTrigger
+            value='setting'
+            className='py-4 rounded-full'
+            data-testid='tab-settings'
+          >
             <Settings2Icon className='size-4 mr-1' />
             Settings
           </TabsTrigger>

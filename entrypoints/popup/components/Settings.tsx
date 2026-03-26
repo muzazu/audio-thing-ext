@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useSavedIndicator } from '@/hooks/useSavedIndicator';
 import { appSettings } from '@/utils/storage';
 
 const formSchema = z.object({
@@ -32,7 +33,7 @@ export function Settings() {
     },
   });
 
-  const [saved, setSaved] = React.useState(false);
+  const { saved, markSaved } = useSavedIndicator();
 
   React.useEffect(() => {
     appSettings.getValue().then((s) => {
@@ -42,8 +43,7 @@ export function Settings() {
 
   async function onSubmit(values: FormValues) {
     await appSettings.setValue(values);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    markSaved();
   }
 
   return (
@@ -62,6 +62,7 @@ export function Settings() {
                   type='number'
                   min={0}
                   max={20}
+                  data-testid='retry-count-input'
                   {...field}
                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
                 />
@@ -87,6 +88,7 @@ export function Settings() {
                   min={100}
                   max={10000}
                   step={10}
+                  data-testid='retry-delay-input'
                   {...field}
                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
                 />
@@ -99,7 +101,12 @@ export function Settings() {
           )}
         />
 
-        <Button type='submit' className='w-full rounded-full' size={'lg'}>
+        <Button
+          type='submit'
+          className='w-full rounded-full'
+          size={'lg'}
+          data-testid='settings-save-button'
+        >
           {saved ? 'Saved!' : 'Save Settings'}
         </Button>
       </form>

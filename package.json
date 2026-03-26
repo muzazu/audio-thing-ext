@@ -14,7 +14,11 @@
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@fontsource-variable/noto-sans": "^5.2.10",
@@ -36,12 +40,15 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",
+    "jsdom": "^29.0.1",
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",
     "typescript": "^5.9.3",
+    "vitest": "^4.1.2",
     "wxt": "^0.20.20"
   }
 }
