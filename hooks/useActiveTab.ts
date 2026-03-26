@@ -46,6 +46,7 @@ export function useActiveTab() {
           const res = await queryTab<GetChannelUrlResponse>(tabId, {
             type: 'GET_CHANNEL_URL',
           });
+          console.log('Extracted channel URL from tab:', res?.channelUrl);
           channelUrl = res?.channelUrl;
         }
 
