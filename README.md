@@ -1,10 +1,16 @@
-# ![Audio Thing](https://raw.githubusercontent.com/muzazu/audio-thing-ext/public/icon/32.png) Audio Thing
+# ![Audio Thing](https://raw.githubusercontent.com/muzazu/audio-thing-ext/main/public/icon/32.png) Audio Thing
 
 A small browser extension to manage and boost audio levels in the browser. Currently targeted for Chrome during development.
 
 **Quick summary:** lightweight UI built with React and WXT, focused on letting users increase or normalize audio output per tab.
 
 **Status:** Prototype / in active development.
+
+---
+
+(\_　\_)。゜zｚＺ
+
+![SS](https://raw.githubusercontent.com/muzazu/audio-thing-ext/main/public/ss.webp)
 
 ## Prerequisites
 
