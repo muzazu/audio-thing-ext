@@ -1,5 +1,6 @@
-import type { ExtEvent, GetChannelUrlResponse } from '@/constants/actions';
+import type { ExtEvent } from '@/constants/actions';
 
+import { waitForElement } from '@/lib/utils';
 import { extractDomain } from '@/utils/domain';
 import { appSettings, volumeEntries } from '@/utils/storage';
 
@@ -63,33 +64,30 @@ function injectGainControl(gain: number): SetVolumeResult {
 
 /**
  * Extracts the channel URL from the page DOM for special domains.
- * Used as a fallback when the channel is not present in the page URL
- * (e.g. a YouTube watch page or a Twitch page navigated via SPA).
+ * Uses a MutationObserver to wait for the relevant element to appear,
+ * so callers do not need an external timeout.
  */
-function extractChannelFromDOM(): string | undefined {
+async function extractChannelFromDOM(): Promise<string | undefined> {
   const { hostname } = window.location;
 
   if (hostname === 'www.youtube.com' || hostname === 'youtube.com') {
     // The channel link lives inside ytd-channel-name on watch/shorts pages
-    const link = document.querySelector(
+    const link = await waitForElement<HTMLAnchorElement>(
       '#upload-info yt-formatted-string.ytd-channel-name a',
     );
+
     if (!link) return undefined;
 
-    let channelUrl: string | undefined = undefined;
     const href = link.getAttribute('href');
     const match = href?.match(/^\/((?:@|channel\/|c\/)[^/?#]+)/);
-
-    if (match) channelUrl = `/${match[1]}`;
-
-    return channelUrl;
+    return match ? `/${match[1]}` : undefined;
   }
 
   if (hostname === 'www.twitch.tv' || hostname === 'twitch.tv') {
-    const h1 = document.querySelector('.channel-info-content h1');
+    const h1 = await waitForElement<HTMLHeadingElement>('h1');
 
-    const link = h1?.closest<HTMLAnchorElement>('a[href]');
-    const seg = link?.getAttribute('href')?.split('/').filter(Boolean)[0];
+    const seg = h1?.textContent?.trim().toLowerCase();
+
     if (seg) return `/${seg}`;
     return undefined;
   }
@@ -100,7 +98,7 @@ function extractChannelFromDOM(): string | undefined {
 
 async function applyStoredVolume(url: string) {
   const domain = extractDomain(url);
-  const channelUrl = extractChannelFromDOM();
+  const channelUrl = await extractChannelFromDOM();
   const entries = await volumeEntries.getValue();
 
   // Prefer channel-specific entry; fall back to domain-wide entry; default to 100%
@@ -126,18 +124,14 @@ async function applyStoredVolume(url: string) {
 export default defineContentScript({
   matches: ['*://*/*'],
   runAt: 'document_end',
-  async main() {
-    const { retryDelay } = await appSettings.getValue();
+  async main(_ctx) {
     // Auto-apply stored volume on initial page load
-    setTimeout(() => {
-      applyStoredVolume(window.location.href);
-    }, retryDelay);
+    applyStoredVolume(window.location.href);
 
-    // Re-apply on SPA navigation
+    // Re-apply on SPA navigation (MutationObserver inside extractChannelFromDOM
+    // handles waiting for the channel element on each navigation)
     const handleNavigation = () => {
-      setTimeout(() => {
-        applyStoredVolume(window.location.href);
-      }, retryDelay);
+      applyStoredVolume(window.location.href);
     };
     window.addEventListener('popstate', handleNavigation);
     window.addEventListener('hashchange', handleNavigation);
@@ -150,10 +144,11 @@ export default defineContentScript({
           const result = injectGainControl(message.gain);
           sendResponse(result);
         } else if (message?.type === 'GET_CHANNEL_URL') {
-          const response: GetChannelUrlResponse = {
-            channelUrl: extractChannelFromDOM(),
-          };
-          sendResponse(response);
+          extractChannelFromDOM().then((channelUrl) => {
+            sendResponse({ channelUrl });
+          });
+
+          return true; // keep the response channel open for the async result
         }
       },
     );

@@ -58,6 +58,11 @@ export function VolumeForm() {
         const domain = extractDomain(tab.url);
         let channelUrl = extractChannelUrl(tab.url);
 
+        browser.runtime.sendMessage({
+          type: 'LOG',
+          message: `Detected active tab URL: ${tab.url}, extracted domain: ${domain}, channelUrl: ${channelUrl}`,
+        });
+
         form.setValue('domain', domain);
 
         // Fall back to DOM extraction when the URL doesn't carry the channel
@@ -66,6 +71,7 @@ export function VolumeForm() {
           const res = await queryTab<GetChannelUrlResponse>(tab.id, {
             type: 'GET_CHANNEL_URL',
           });
+
           channelUrl = res?.channelUrl;
         }
 

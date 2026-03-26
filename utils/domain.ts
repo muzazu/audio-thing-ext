@@ -57,6 +57,7 @@ export function extractChannelUrl(url: string): string | undefined {
         'login',
         'signup',
         'p',
+        'videos',
       ]);
       const seg = pathname.split('/')[1];
       if (seg && !NON_CHANNEL_TWITCH.has(seg)) return `/${seg}`;

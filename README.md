@@ -1,4 +1,4 @@
-# Audio Thing EXT
+# ![Audio Thing](https://raw.githubusercontent.com/muzazu/audio-thing-ext/public/icon/32.png) Audio Thing
 
 A small browser extension to manage and boost audio levels in the browser. Currently targeted for Chrome during development.
 

@@ -24,7 +24,7 @@ export const appSettings = storage.defineItem<AppSettings>(
   'local:appSettings',
   {
     fallback: {
-      retryCount: 5,
+      retryCount: 1,
       retryDelay: 1000,
     },
     version: 1,

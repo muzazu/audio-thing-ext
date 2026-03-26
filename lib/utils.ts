@@ -42,3 +42,36 @@ export const queryTab = async <T>(
     return undefined;
   }
 };
+
+/**
+ * Waits for an element matching `selector` to appear in the DOM.
+ * Resolves with the element when found, or null after `timeout` ms.
+ */
+export const waitForElement = async <T extends Element>(
+  selector: string,
+  timeout = 5000,
+): Promise<T | null> => {
+  return new Promise((resolve) => {
+    const existing = document.querySelector<T>(selector);
+    if (existing) {
+      resolve(existing);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      resolve(null);
+    }, timeout);
+
+    const observer = new MutationObserver((_mutations, obs) => {
+      const el = document.querySelector<T>(selector);
+      if (el) {
+        clearTimeout(timer);
+        obs.disconnect();
+        resolve(el);
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+};
