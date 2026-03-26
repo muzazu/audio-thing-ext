@@ -1,10 +1,12 @@
 import Fuse from 'fuse.js';
 import { Trash2Icon } from 'lucide-react';
+import { ScrollArea } from 'radix-ui';
 import * as React from 'react';
-import { VList } from 'virtua';
+import { Virtualizer } from 'virtua';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollBar } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import {
   Tooltip,
@@ -12,11 +14,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { sendMessage } from '@/lib/utils';
-import { extractChannelUrl, extractDomain } from '@/utils/domain';
+import { GetChannelUrlResponse } from '@/constants/actions';
+import { queryTab, sendMessage } from '@/lib/utils';
+import { extractDomain } from '@/utils/domain';
 import { type VolumeEntry, volumeEntries } from '@/utils/storage';
 
-export function ConfigList() {
+export function SavedList() {
   const [entries, setEntries] = React.useState<VolumeEntry[]>([]);
   const [query, setQuery] = React.useState('');
   const activeTabIdRef = React.useRef<number | undefined>(undefined);
@@ -38,8 +41,12 @@ export function ConfigList() {
         if (!tab?.id || !tab?.url) return;
         activeTabIdRef.current = tab.id;
         const domain = extractDomain(tab.url);
-        const channelUrl = extractChannelUrl(tab.url);
+        const res = await queryTab<GetChannelUrlResponse>(tab.id, {
+          type: 'GET_CHANNEL_URL',
+        });
+        const channelUrl = res?.channelUrl;
         const stored = await volumeEntries.getValue();
+
         const match = stored.find(
           (e) =>
             e.domain === domain && (e.channelUrl ?? '') === (channelUrl ?? ''),
@@ -84,6 +91,16 @@ export function ConfigList() {
   async function handleDelete(id: string) {
     const current = await volumeEntries.getValue();
     await volumeEntries.setValue(current.filter((e) => e.id !== id));
+
+    if (
+      id === activeEntryIdRef.current &&
+      activeTabIdRef.current !== undefined
+    ) {
+      sendMessage(activeTabIdRef.current, {
+        type: 'SET_VOLUME',
+        gain: 1.0,
+      });
+    }
   }
 
   // Clean up any pending timers on unmount
@@ -101,6 +118,8 @@ export function ConfigList() {
     });
     return fuse.search(query).map((r) => r.item);
   }, [entries, query]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   if (entries.length === 0) {
     return (
@@ -127,60 +146,85 @@ export function ConfigList() {
           No matches found.
         </div>
       ) : (
-        <VList style={{ height: '360px' }}>
-          {filteredEntries.map((entry) => (
-            <div
-              key={entry.id}
-              className='flex flex-col gap-2 border-b border-border px-4 py-3 last:border-b-0'
-            >
-              <div className='flex items-center justify-between gap-2'>
-                <div className='flex flex-col min-w-0'>
-                  <span className='truncate text-xs font-medium text-foreground'>
-                    {entry.domain}
-                  </span>
-                  {entry.channelUrl && (
-                    <ChannelUrlFormat channelUrl={entry.channelUrl} />
-                  )}
-                </div>
-                <div className='flex items-center gap-2 shrink-0'>
-                  <span className='text-xs tabular-nums text-foreground'>
-                    {entry.volume}%
-                  </span>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          onClick={() => handleDelete(entry.id)}
-                          aria-label={`Delete ${entry.domain}`}
-                        >
-                          <Trash2Icon />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <span>Delete</span>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </div>
-
-              <Slider
-                min={0}
-                max={300}
-                step={1}
-                value={[entry.volume]}
-                onValueChange={([v]) => handleVolumeChange(entry.id, v)}
-              />
-            </div>
-          ))}
-        </VList>
+        <ScrollArea.Root data-slot='scroll-area' className='relative h-80'>
+          <ScrollArea.Viewport
+            data-slot='scroll-area-viewport'
+            className='size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1'
+            ref={scrollRef}
+          >
+            <Virtualizer scrollRef={scrollRef}>
+              {filteredEntries.map((entry) => (
+                <VolumeEntryRow
+                  key={entry.id}
+                  entry={entry}
+                  onDelete={handleDelete}
+                  onVolumeChange={handleVolumeChange}
+                />
+              ))}
+            </Virtualizer>
+          </ScrollArea.Viewport>
+          <ScrollBar orientation='vertical' />
+          <ScrollArea.Corner />
+        </ScrollArea.Root>
       )}
     </div>
   );
 }
+
+/**
+ * Represents a single saved volume entry in the list, with its own slider and delete button.
+ */
+const VolumeEntryRow = ({
+  entry,
+  onDelete,
+  onVolumeChange,
+}: {
+  entry: VolumeEntry;
+  onDelete: (id: string) => void;
+  onVolumeChange: (id: string, volume: number) => void;
+}) => (
+  <div className='flex flex-col gap-2 border-b border-border px-4 py-3 last:border-b-0'>
+    <div className='flex items-center justify-between gap-2'>
+      <div className='flex flex-col min-w-0'>
+        <span className='truncate text-xs font-medium text-foreground'>
+          {entry.domain}
+        </span>
+        {entry.channelUrl && <ChannelUrlFormat channelUrl={entry.channelUrl} />}
+      </div>
+      <div className='flex items-center gap-2 shrink-0'>
+        <span className='text-xs tabular-nums text-foreground'>
+          {entry.volume}%
+        </span>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={() => onDelete(entry.id)}
+                aria-label={`Delete ${entry.domain}`}
+              >
+                <Trash2Icon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>Delete</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </div>
+
+    <Slider
+      min={0}
+      max={300}
+      step={1}
+      value={[entry.volume]}
+      onValueChange={([v]) => onVolumeChange(entry.id, v)}
+    />
+  </div>
+);
 
 /**
  * If the channel URL contains multiple segments, only show the last one for better readability.

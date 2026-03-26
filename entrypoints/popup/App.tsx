@@ -3,7 +3,7 @@ import { AudioLinesIcon, BookmarkIcon, Settings2Icon } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { ConfigList } from './components/ConfigList';
+import { SavedList } from './components/SavedList';
 import { Settings } from './components/Settings';
 import { VolumeForm } from './components/VolumeForm';
 
@@ -22,7 +22,7 @@ function App() {
           <VolumeForm />
         </TabsContent>
         <TabsContent value='saved' className='flex-1 overflow-hidden'>
-          <ConfigList />
+          <SavedList />
         </TabsContent>
         <TabsContent value='setting' className='flex-1 overflow-y-auto'>
           <Settings />
