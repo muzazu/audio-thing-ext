@@ -20,10 +20,16 @@ export default defineBackground(() => {
     await Promise.allSettled(
       tabs
         .filter((tab) => tab.id !== undefined && isInjectableUrl(tab.url))
-        .map((tab) =>
-          browser.scripting.executeScript({
-            target: { tabId: tab.id! },
-            files: ['/content-scripts/content.js'],
+        .map(
+          (tab) =>
+            browser.scripting.executeScript({
+              target: { tabId: tab.id! },
+              files: ['/content-scripts/content.js'],
+            }),
+          browser.runtime.onMessage.addListener((message: any) => {
+            if (message.type === 'LOG') {
+              console.log('❌ Message from content script:', message);
+            }
           }),
         ),
     );

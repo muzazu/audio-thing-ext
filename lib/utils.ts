@@ -7,6 +7,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const CONNECTION_ERROR =
+  'Could not establish connection. Receiving end does not exist.';
+
 /**
  * Some pages are unable to inject content scripts,
  * so it is not possible to register a message listener with the page,
@@ -16,13 +19,26 @@ export const sendMessage = async (id: number, event: ExtEvent) => {
   try {
     await browser.tabs.sendMessage(id, event);
   } catch (error) {
-    if (
-      !(error instanceof Error) ||
-      error.message !==
-        'Could not establish connection. Receiving end does not exist.'
-    ) {
+    if (!(error instanceof Error) || error.message !== CONNECTION_ERROR) {
       throw error;
     }
-    console.error(`Failed to send message to tab ${id}:`, error);
+  }
+};
+
+/**
+ * Sends a message to the content script of a tab and returns its response.
+ * Returns undefined if the content script is not available on that tab.
+ */
+export const queryTab = async <T>(
+  id: number,
+  event: ExtEvent,
+): Promise<T | undefined> => {
+  try {
+    return (await browser.tabs.sendMessage(id, event)) as T;
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== CONNECTION_ERROR) {
+      throw error;
+    }
+    return undefined;
   }
 };

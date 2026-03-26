@@ -3,6 +3,8 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import type { GetChannelUrlResponse } from '@/constants/actions';
+
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { sendMessage } from '@/lib/utils';
+import { sendMessage, queryTab } from '@/lib/utils';
 import {
   extractChannelUrl,
   extractDomain,
@@ -54,9 +56,19 @@ export function VolumeForm() {
         if (!tab?.url) return;
         activeTabIdRef.current = tab.id;
         const domain = extractDomain(tab.url);
-        const channelUrl = extractChannelUrl(tab.url);
+        let channelUrl = extractChannelUrl(tab.url);
 
         form.setValue('domain', domain);
+
+        // Fall back to DOM extraction when the URL doesn't carry the channel
+        // (e.g. YouTube watch pages, Twitch pages visited via SPA navigation)
+        if (!channelUrl && tab.id !== undefined && isSpecialDomain(domain)) {
+          const res = await queryTab<GetChannelUrlResponse>(tab.id, {
+            type: 'GET_CHANNEL_URL',
+          });
+          channelUrl = res?.channelUrl;
+        }
+
         if (channelUrl) {
           form.setValue('channelUrl', channelUrl);
         }
@@ -182,7 +194,7 @@ export function VolumeForm() {
           )}
         />
 
-        <Button type='submit' className='w-full' size='sm'>
+        <Button type='submit' className='w-full rounded-full mt-2' size={'lg'}>
           {saved ? 'Saved!' : 'Save'}
         </Button>
       </form>

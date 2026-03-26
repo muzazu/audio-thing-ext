@@ -8,7 +8,6 @@ export default defineConfig({
   manifest: {
     name: 'Audio Thing Extension',
     description: 'A browser extension for audio processing.',
-    default_locale: 'en',
     homepage_url: 'https://github.com/muzazu/audio-thing-ext',
     permissions: ['storage', 'tabs', 'scripting'],
   },
