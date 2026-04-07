@@ -6,26 +6,31 @@ A small browser extension to manage and boost audio levels in the browser.
 
 **Status:** Prototype / in active development.
 
+**Try It:** [Chrome Web Store](https://chromewebstore.google.com/detail/fogdedbbmagmgikimklbkbpnpieeimkf)
+
 ---
 
 (\_　\_)。゜zｚＺ
 
 ![SS](https://raw.githubusercontent.com/muzazu/audio-thing-ext/main/public/ss.webp)
 
-## Prerequisites
+## Setup (stuff you probably need)
 
-- Node.js (recommended >= 18)
-- vp (Vite Plus) — we use `vp` for hooks: https://viteplus.dev/guide/
-- bun: https://bun.com/
-- oxc plugins: https://oxc.rs/docs/guide/introduction.html
+- Node.js (18+ is safe)
+- bun → https://bun.com/
+- oxc plugins (linting and formatting) → https://oxc.rs/docs/guide/introduction.html
+- (optional) vp (Vite Plus) → https://viteplus.dev/guide/
 
-## Tech stack
+## Stack
 
-- WXT (extension framework): https://wxt.dev/guide/introduction.html
-- React: https://react.dev/
-- shadcn/ui: https://ui.shadcn.com/
+- WXT (extension framework) → https://wxt.dev/guide/introduction.html
+- React → https://react.dev/
+- shadcn/ui → https://ui.shadcn.com/
 
 ## Getting started (development)
+
+If you’ve never used WXT, maybe skim this first:  
+https://wxt.dev/guide/introduction.html
 
 1. Install dependencies:
 
@@ -66,7 +71,8 @@ Note: build output folder may vary depending on WXT/vite config.
 
 ## Contributing
 
-Contributions are welcome. Please open an issue or a PR with a clear description of the change.
+PRs are welcome,
+if something’s unclear / broken, just open an issue
 
 ## License
 
