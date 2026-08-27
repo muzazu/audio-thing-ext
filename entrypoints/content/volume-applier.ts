@@ -132,6 +132,8 @@ export async function applyStoredVolume(url: string): Promise<void> {
   );
   if (channelEntry) {
     applyGain(channelEntry.volume / 100, applicationId, retryCount, retryDelay);
+  } else if (domainEntry) {
+    applyGain(domainEntry.volume / 100, applicationId, retryCount, retryDelay);
   } else {
     applyGain(1, applicationId, retryCount, retryDelay);
   }
