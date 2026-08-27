@@ -26,7 +26,7 @@ export default defineContentScript({
         const result = injectGainControl(message.gain);
         sendResponse(result);
       } else if (message?.type === 'GET_CHANNEL_URL') {
-        extractChannelFromDOM().then((channelUrl) => {
+        extractChannelFromDOM(100).then((channelUrl) => {
           sendResponse({ channelUrl });
         });
         return true; // keep the response channel open for the async result

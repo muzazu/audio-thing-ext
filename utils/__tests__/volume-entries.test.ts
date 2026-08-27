@@ -3,6 +3,7 @@ import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 import { volumeEntries } from '../storage';
 import { upsertVolumeEntry, deleteVolumeEntry } from '../volume-entries';
+import { createVolumeScope } from '../volume-scope';
 
 describe('upsertVolumeEntry', () => {
   beforeEach(() => {
@@ -10,7 +11,10 @@ describe('upsertVolumeEntry', () => {
   });
 
   it('creates a new entry when none exists', async () => {
-    const entry = await upsertVolumeEntry('youtube.com', 150, '/@mkbhd');
+    const entry = await upsertVolumeEntry(
+      createVolumeScope('youtube.com', '/@mkbhd'),
+      150,
+    );
     expect(entry.domain).toBe('youtube.com');
     expect(entry.volume).toBe(150);
     expect(entry.channelUrl).toBe('/@mkbhd');
@@ -30,7 +34,10 @@ describe('upsertVolumeEntry', () => {
       },
     ]);
 
-    const updated = await upsertVolumeEntry('youtube.com', 200, '/@mkbhd');
+    const updated = await upsertVolumeEntry(
+      createVolumeScope('youtube.com', '/@mkbhd'),
+      200,
+    );
     expect(updated.volume).toBe(200);
 
     const stored = await volumeEntries.getValue();
@@ -49,14 +56,14 @@ describe('upsertVolumeEntry', () => {
       },
     ]);
 
-    await upsertVolumeEntry('youtube.com', 80, '/@linus');
+    await upsertVolumeEntry(createVolumeScope('youtube.com', '/@linus'), 80);
 
     const stored = await volumeEntries.getValue();
     expect(stored).toHaveLength(2);
   });
 
   it('handles domain-wide entries (no channelUrl)', async () => {
-    await upsertVolumeEntry('example.com', 120);
+    await upsertVolumeEntry(createVolumeScope('example.com'), 120);
 
     const stored = await volumeEntries.getValue();
     expect(stored).toHaveLength(1);

@@ -9,12 +9,16 @@ import {
   isSpecialDomain,
 } from '@/utils/domain';
 import { volumeEntries, type VolumeEntry } from '@/utils/storage';
+import {
+  createVolumeScope,
+  findApplicableVolumeEntry,
+  type VolumeScope,
+} from '@/utils/volume-scope';
 
 export interface ActiveTabInfo {
   tabId: number | undefined;
-  domain: string;
-  channelUrl: string | undefined;
-  existingEntry: VolumeEntry | undefined;
+  scope: VolumeScope;
+  applicableEntry: VolumeEntry | undefined;
 }
 
 /**
@@ -24,9 +28,8 @@ export interface ActiveTabInfo {
 export function useActiveTab() {
   const [info, setInfo] = React.useState<ActiveTabInfo>({
     tabId: undefined,
-    domain: '',
-    channelUrl: undefined,
-    existingEntry: undefined,
+    scope: createVolumeScope(''),
+    applicableEntry: undefined,
   });
 
   React.useEffect(() => {
@@ -46,20 +49,17 @@ export function useActiveTab() {
           const res = await queryTab<GetChannelUrlResponse>(tabId, {
             type: 'GET_CHANNEL_URL',
           });
-          console.log('Extracted channel URL from tab:', res?.channelUrl);
           channelUrl = res?.channelUrl;
         }
 
         if (cancelled) return;
 
+        const scope = createVolumeScope(domain, channelUrl);
         const entries = await volumeEntries.getValue();
-        const existingEntry = entries.find(
-          (e) =>
-            e.domain === domain && (e.channelUrl ?? '') === (channelUrl ?? ''),
-        );
+        const applicableEntry = findApplicableVolumeEntry(entries, scope);
 
         if (!cancelled) {
-          setInfo({ tabId, domain, channelUrl, existingEntry });
+          setInfo({ tabId, scope, applicableEntry });
         }
       });
 

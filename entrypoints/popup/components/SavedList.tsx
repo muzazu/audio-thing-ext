@@ -37,7 +37,10 @@ export function SavedList() {
       );
 
       // Live feedback: apply to the active tab if this entry matches it
-      if (id === activeTab.existingEntry?.id && activeTab.tabId !== undefined) {
+      if (
+        id === activeTab.applicableEntry?.id &&
+        activeTab.tabId !== undefined
+      ) {
         sendMessage(activeTab.tabId, {
           type: 'SET_VOLUME',
           gain: volume / 100,
@@ -65,7 +68,10 @@ export function SavedList() {
     async (id: string) => {
       await deleteVolumeEntry(id);
 
-      if (id === activeTab.existingEntry?.id && activeTab.tabId !== undefined) {
+      if (
+        id === activeTab.applicableEntry?.id &&
+        activeTab.tabId !== undefined
+      ) {
         sendMessage(activeTab.tabId, {
           type: 'SET_VOLUME',
           gain: 1.0,

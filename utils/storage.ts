@@ -1,10 +1,10 @@
 import { storage } from '#imports';
 
-export type VolumeEntry = {
+import type { VolumeScope } from './volume-scope';
+
+export type VolumeEntry = VolumeScope & {
   id: string;
-  domain: string;
-  volume: number; // 0–300, 100 = original
-  channelUrl?: string; // e.g. "/@mkbhd", for YT/Twitch/Kick
+  volume: number; // 0–900, 100 = original
 };
 
 export const volumeEntries = storage.defineItem<VolumeEntry[]>(
@@ -16,7 +16,7 @@ export const volumeEntries = storage.defineItem<VolumeEntry[]>(
 );
 
 export type AppSettings = {
-  retryCount: number; // number of times to retry injecting gain control
+  retryCount: number; // number of times to retry detection and gain-control injection
   retryDelay: number; // ms between each retry attempt
 };
 

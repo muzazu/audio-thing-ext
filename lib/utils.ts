@@ -15,14 +15,22 @@ const CONNECTION_ERROR =
  * so it is not possible to register a message listener with the page,
  * such as `chrome://newtab` and `chrome.google.com`, and this error on those sites is a noise.
  */
-export const sendMessage = async (id: number, event: ExtEvent) => {
+async function messageTab<T>(
+  id: number,
+  event: ExtEvent,
+): Promise<T | undefined> {
   try {
-    await browser.tabs.sendMessage(id, event);
+    return (await browser.tabs.sendMessage(id, event)) as T;
   } catch (error) {
     if (!(error instanceof Error) || error.message !== CONNECTION_ERROR) {
       throw error;
     }
+    return undefined;
   }
+}
+
+export const sendMessage = async (id: number, event: ExtEvent) => {
+  await messageTab(id, event);
 };
 
 /**
@@ -32,16 +40,7 @@ export const sendMessage = async (id: number, event: ExtEvent) => {
 export const queryTab = async <T>(
   id: number,
   event: ExtEvent,
-): Promise<T | undefined> => {
-  try {
-    return (await browser.tabs.sendMessage(id, event)) as T;
-  } catch (error) {
-    if (!(error instanceof Error) || error.message !== CONNECTION_ERROR) {
-      throw error;
-    }
-    return undefined;
-  }
-};
+): Promise<T | undefined> => messageTab<T>(id, event);
 
 /**
  * Waits for an element matching `selector` to appear in the DOM.
