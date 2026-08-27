@@ -49,7 +49,7 @@ export function Settings() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4 p-4'>
-        <h2 className='text-lg font-medium'>Injection Settings</h2>
+        <h2 className='text-lg font-medium'>Retry Settings</h2>
 
         <FormField
           control={form.control}
@@ -68,8 +68,8 @@ export function Settings() {
                 />
               </FormControl>
               <FormDescription>
-                How many times to retry injecting volume control when no video
-                is found yet (0–20).
+                How many times to retry channel detection or injecting volume
+                control when the page is not ready yet (0–20).
               </FormDescription>
               <FormMessage />
             </FormItem>

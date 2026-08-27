@@ -95,7 +95,9 @@ export function extractChannelUrl(url: string): string | undefined {
  * Uses a MutationObserver to wait for the relevant element to appear,
  * so callers do not need an external timeout.
  */
-export const extractChannelFromDOM = async (): Promise<string | undefined> => {
+export const extractChannelFromDOM = async (
+  timeout = 5000,
+): Promise<string | undefined> => {
   const { hostname } = window.location;
 
   if (hostname === 'www.youtube.com' || hostname === 'youtube.com') {
@@ -105,9 +107,7 @@ export const extractChannelFromDOM = async (): Promise<string | undefined> => {
     ];
 
     const links = await Promise.allSettled(
-      // works fine with 4g network latency, so no need for a longer timeout
-      // maybe consider adding a short delay between attempts if this becomes an issue in the future
-      selectors.map((sel) => waitForElement(sel, 0)),
+      selectors.map((sel) => waitForElement(sel, timeout)),
     );
     const link = links.filter(
       (res): res is PromiseFulfilledResult<HTMLAnchorElement> =>
@@ -124,14 +124,12 @@ export const extractChannelFromDOM = async (): Promise<string | undefined> => {
       // ignore parsing errors and keep original href
     }
 
-    const match = href.match(/^\/(?:@|channel\/|c\/)[^/?#]+/);
+    const match = href.match(/^\/(?:@|channel\/|c\/|user\/)[^/?#]+/);
     return match ? `${match[0]}` : undefined;
   }
 
   if (hostname === 'www.twitch.tv' || hostname === 'twitch.tv') {
-    // works fine with 4g network latency, so no need for a longer timeout
-    // maybe consider adding a short delay between attempts if this becomes an issue in the future
-    const h1 = await waitForElement<HTMLHeadingElement>('h1', 0);
+    const h1 = await waitForElement<HTMLHeadingElement>('h1', timeout);
 
     const seg = h1?.textContent?.trim().toLowerCase();
 

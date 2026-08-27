@@ -1,32 +1,29 @@
 import { volumeEntries, type VolumeEntry } from '@/utils/storage';
+import { findExactVolumeEntry, type VolumeScope } from '@/utils/volume-scope';
 
 /**
  * Creates or updates a volume entry for the given domain/channel combination.
  * Returns the final entry (with a stable `id` for updates).
  */
 export async function upsertVolumeEntry(
-  domain: string,
+  scope: VolumeScope,
   volume: number,
-  channelUrl?: string,
 ): Promise<VolumeEntry> {
   const entries = await volumeEntries.getValue();
-  const idx = entries.findIndex(
-    (e) => e.domain === domain && (e.channelUrl ?? '') === (channelUrl ?? ''),
-  );
+  const existing = findExactVolumeEntry(entries, scope);
 
-  if (idx >= 0) {
-    const updated = { ...entries[idx], volume, channelUrl };
+  if (existing) {
+    const updated = { ...existing, ...scope, volume };
     await volumeEntries.setValue(
-      entries.map((e, i) => (i === idx ? updated : e)),
+      entries.map((entry) => (entry.id === existing.id ? updated : entry)),
     );
     return updated;
   }
 
   const newEntry: VolumeEntry = {
     id: crypto.randomUUID(),
-    domain,
+    ...scope,
     volume,
-    channelUrl,
   };
   await volumeEntries.setValue([...entries, newEntry]);
   return newEntry;

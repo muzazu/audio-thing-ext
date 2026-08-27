@@ -29,3 +29,8 @@ web-ext.config.ts
 blob-report
 playwright-report
 test-results
+
+# AI
+CONTEXT.md
+docs/*
+.scratch/*

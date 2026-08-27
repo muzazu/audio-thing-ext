@@ -20,7 +20,6 @@ export function injectGainControl(gain: number): SetVolumeResult {
   if (videos.length > 0) {
     videos.forEach((video) => {
       managedVideos.add(video);
-
       if (!video._gainNode) {
         if (video._volumeFallback) {
           video.volume = Math.min(gain, 1);

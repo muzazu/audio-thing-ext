@@ -64,7 +64,7 @@ export const VolumeEntryRow = React.memo(function VolumeEntryRow({
 
       <Slider
         min={0}
-        max={300}
+        max={900}
         step={1}
         value={[entry.volume]}
         onValueChange={([v]) => onVolumeChange(entry.id, v)}

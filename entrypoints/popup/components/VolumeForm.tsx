@@ -19,11 +19,12 @@ import { useSavedIndicator } from '@/hooks/useSavedIndicator';
 import { sendMessage } from '@/lib/utils';
 import { isSpecialDomain } from '@/utils/domain';
 import { upsertVolumeEntry } from '@/utils/volume-entries';
+import { createVolumeScope } from '@/utils/volume-scope';
 
 const formSchema = z.object({
   domain: z.string().min(1, 'Domain is required'),
   channelUrl: z.string().optional(),
-  volume: z.number().min(0).max(300),
+  volume: z.number().min(0).max(900),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,27 +42,28 @@ export function VolumeForm() {
   const { saved, markSaved } = useSavedIndicator();
   const activeTab = useActiveTab();
 
-  const watchedDomain = form.watch('domain');
-  const showChannelUrl = isSpecialDomain(watchedDomain);
+  const domain = form.watch('domain');
+  const showChannelUrl = isSpecialDomain(domain);
 
   // Sync active tab info into form fields when it resolves
   React.useEffect(() => {
-    if (!activeTab.domain) return;
-    form.setValue('domain', activeTab.domain);
-    if (activeTab.channelUrl) {
-      form.setValue('channelUrl', activeTab.channelUrl);
+    if (!activeTab.scope.domain) return;
+    form.setValue('domain', activeTab.scope.domain);
+    if (activeTab.scope.channelUrl) {
+      form.setValue('channelUrl', activeTab.scope.channelUrl);
     }
-    if (activeTab.existingEntry) {
-      form.setValue('volume', activeTab.existingEntry.volume);
+    if (activeTab.applicableEntry) {
+      form.setValue('volume', activeTab.applicableEntry.volume);
     }
   }, [form, activeTab]);
 
   async function onSubmit(values: FormValues) {
-    const channelUrl = showChannelUrl
-      ? values.channelUrl || undefined
-      : undefined;
+    const scope = createVolumeScope(
+      values.domain,
+      showChannelUrl ? values.channelUrl : undefined,
+    );
 
-    await upsertVolumeEntry(values.domain, values.volume, channelUrl);
+    await upsertVolumeEntry(scope, values.volume);
 
     if (activeTab.tabId !== undefined) {
       await sendMessage(activeTab.tabId, {
@@ -132,7 +134,7 @@ export function VolumeForm() {
               <FormControl>
                 <Slider
                   min={0}
-                  max={300}
+                  max={900}
                   step={1}
                   value={[field.value]}
                   data-testid='volume-slider'
